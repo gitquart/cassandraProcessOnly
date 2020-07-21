@@ -2,6 +2,7 @@ from cassandra.cluster import Cluster
 from cassandra.auth import PlainTextAuthProvider
 from cassandra.query import SimpleStatement
 import writeFile as wf
+ls_months=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']
 
 pathToHereWin='C:\\Users\\Acer\\Documents\\quart\\appsquart\\cassandraProcessOnly\\'
 
@@ -23,22 +24,45 @@ def update(period):
     session = cluster.connect()
     session.default_timeout=70
     print('Updating started...')
-    querySt="select book_number,subject,dt_publication_date,id_thesis from thesis.tbthesis where period_number="+str(period)+""
+    querySt="select book_number,dt_publication_date,publication_date,id_thesis from thesis.tbthesis where period_number="+str(period)+""
     statement = SimpleStatement(querySt, fetch_size=1000)
     for row in session.execute(statement):
         id_thesis=''
         book_number=''
-        subject=''
         date=''
-        #wf.appendInfoToFile(pathToHereWin,'5ta.txt',row[0])
+        #subject=''
+        wf.appendInfoToFile(pathToHereWin,str(period)+'_bookNumber.txt',row[0]+' '+str(row[1])+' '+row[2])
         id_thesis=str(row[3])
-        date=row[2]
+        #date=row[2]
         #Case for date and book_number
+        """
+        #Case: Book number 2nd position starts with month
+        book_number=str(row[0])
+        chunks=''
+        chunks=book_number.split(',')
+        if len(chunks)==2:
+            val=''
+            val=chunks[1].strip()
+            if val!='':
+                if val.find(' ')!=-1: 
+                    valChunks=val.split(' ')
+                    month=''
+                    month=valChunks[0].lower()  
+                    for item in ls_months:
+                        if month==item:
+                            date=getCompleteDate(chunks[1].strip())
+                            updateSt="update thesis.tbthesis set publication_date='"+str(val)+"', dt_publication_date='"+date+"' where id_thesis="+id_thesis
+                            print('ID:',id_thesis)              
+                            future = session.execute_async(updateSt)
+                            res= future.result() 
+                         
+        
+        """
         """
         if date!=date_null:
             book_number=row[0] 
             #chunks=''
-        """        
+                
         subject=row[1]
         chunks=''
         chunks=subject.split(',')
@@ -65,11 +89,39 @@ def update(period):
         print('ID:',id_thesis)
                       
         future = session.execute_async(updateSt)
-        res= future.result()    
-        
-            
-                              
-    cluster.shutdown()          
+        res= future.result()  
+        """  
+                                
+    cluster.shutdown()  
+    
+    
+def getCompleteDate(pub_date):
+    pub_date=pub_date.strip()
+    if pub_date!='':
+        if pub_date.find(' ')!=-1:
+            # Day month year and hour
+            chunks=pub_date.split(' ')
+            #day=str(chunks[1].strip())
+            month=str(chunks[0].strip())
+            year=str(chunks[2].strip()) 
+        elif pub_date.find(':')!=-1:
+            chunks=pub_date.split(':')
+            date_chunk=str(chunks[1].strip())
+            data=date_chunk.split(' ')
+            month=str(data[3].strip())
+            day=str(data[1].strip())
+            year=str(data[5].strip())
+        month_lower=month.lower()
+        for item in ls_months:
+            if month_lower==item:
+                month=str(ls_months.index(item)+1)
+                if len(month)==1:
+                    month='0'+month
+                    break
+                
+    completeDate=year+'-'+month+'-'+'01'                   
+    return completeDate      
+          
 
 class CassandraConnection():
     cc_user='quartadmin'
