@@ -31,33 +31,37 @@ def update(period):
         book_number=''
         date=''
         #subject=''
-        wf.appendInfoToFile(pathToHereWin,str(period)+'_bookNumber.txt',row[0]+' '+str(row[1])+' '+row[2])
+        wf.appendInfoToFile(pathToHereWin,str(period)+'_bookNumber.txt',row[0]+'  '+str(row[1])+'  '+row[2])
         id_thesis=str(row[3])
-        #date=row[2]
-        #Case for date and book_number
-        """
+        
         #Case: Book number 2nd position starts with month
+        """
         book_number=str(row[0])
         chunks=''
         chunks=book_number.split(',')
-        if len(chunks)==2:
+        if len(chunks)==3:
             val=''
-            val=chunks[1].strip()
+            val=chunks[2].strip()
             if val!='':
                 if val.find(' ')!=-1: 
                     valChunks=val.split(' ')
                     month=''
-                    month=valChunks[0].lower()  
-                    for item in ls_months:
-                        if month==item:
-                            date=getCompleteDate(chunks[1].strip())
-                            updateSt="update thesis.tbthesis set publication_date='"+str(val)+"', dt_publication_date='"+date+"' where id_thesis="+id_thesis
-                            print('ID:',id_thesis)              
-                            future = session.execute_async(updateSt)
-                            res= future.result() 
+                    month=valChunks[0]
+                    if month.find('-')!=-1:
+                        dashChunk=month.split('-')
+                        month=dashChunk[1].lower()  
+                        for item in ls_months:
+                            if month==item:
+                                date=getCompleteDate(month+' de '+valChunks[2])
+                                updateSt="update thesis.tbthesis set publication_date='"+str(val)+"', dt_publication_date='"+date+"' where id_thesis="+id_thesis
+                                print('ID:',id_thesis)              
+                                future = session.execute_async(updateSt)
+                                res= future.result() 
+                                break
                          
         
         """
+        
         """
         if date!=date_null:
             book_number=row[0] 
@@ -118,8 +122,11 @@ def getCompleteDate(pub_date):
                 if len(month)==1:
                     month='0'+month
                     break
-                
-    completeDate=year+'-'+month+'-'+'01'                   
+        if month=='06':
+            day='30'
+        if month=='12':
+            day='31'                
+    completeDate=year+'-'+month+'-'+day                   
     return completeDate      
           
 
