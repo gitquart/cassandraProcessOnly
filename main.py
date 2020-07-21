@@ -65,7 +65,7 @@ def update(period):
         print('ID:',id_thesis)
                       
         future = session.execute_async(updateSt)
-        res= future.result();    
+        res= future.result()    
         
             
                               
